@@ -1,0 +1,37 @@
+name: CI with Security Checks
+
+on: [push, pull_request]
+
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install safety
+          pip install bandit
+
+      - name: Run Tests
+        run: pytest
+
+      - name: Security Check 1 - Dependency Scan
+        continue-on-error: true
+        run: |
+          echo "Checking for vulnerable dependencies..."
+          safety check --full-report
+
+      - name: Security Check 2 - Code Security Scan
+        continue-on-error: true
+        run: |
+          echo "Scanning code for security issues..."
+          bandit -r . -ll
